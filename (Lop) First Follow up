@@ -1,0 +1,57 @@
+function sendFollowUpEmails() {
+  const SHEET_NAME = 'LOP';
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+  const updates = [];
+  const today = new Date();
+  const rows = data.slice(1);
+
+  rows.forEach((row, index) => {
+    const rowIndex = index + 2;
+    const [empId, name, email, , amount, , , , mailTrigger, mailStatus, mailDate, followStatus, followDate, , , stopFollow] = row;
+
+    if (!empId || mailTrigger !== "Mail Sent" || mailStatus !== "Mail Sent") return;
+    if (followStatus === "Mail Sent") return;
+    if (stopFollow === "Stop follow-ups") {
+      sheet.getRange(rowIndex, 12).setValue("Follow Up Stopped"); // Col L
+      return;
+    }
+
+    const mailSentDate = (mailDate instanceof Date) ? mailDate : new Date(mailDate);
+    if (isNaN(mailSentDate.getTime())) {
+      Logger.log(`Invalid date in Col K for row ${rowIndex}`);
+      return;
+    }
+
+    const diffInMs = today - mailSentDate;
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    if (diffInDays < 20) return;
+
+    try {
+      const subject = `Follow-Up Reminder – Pending Dues Settlement`;
+      const htmlBody = `
+        <p>Hi ${name},</p>
+        <p>Hope you are doing well.</p>
+
+        <p>This is a follow-up reminder regarding the revised outstanding amount of INR <strong>${amount}</strong>, which remains unpaid despite our earlier communication.</p>
+
+        <p>We kindly request you to process the payment at the earliest. The bank details were shared in our previous correspondence. Once the transfer is completed, please share a screenshot of the payment confirmation for our records.</p>
+
+        <p>Kindly note that until this payment is received, we will be unable to share your experience letter and respond to any background verification requests from prospective employers.</p>
+
+        <p>We urge you to treat this matter with priority. Please let us know if you have any queries.</p>
+
+        <p>Regards,<br>Niharica</p>
+      `;
+
+      MailApp.sendEmail({ to: email, subject, htmlBody });
+
+      sheet.getRange(rowIndex, 12).setValue("Mail Sent"); // Col L
+      sheet.getRange(rowIndex, 13).setValue(new Date());  // Col M
+
+    } catch (e) {
+      Logger.log(`Follow-up email failed for row ${rowIndex}: ${e.message}`);
+      sheet.getRange(rowIndex, 12).setValue("Error"); // Col L
+    }
+  });
+}
