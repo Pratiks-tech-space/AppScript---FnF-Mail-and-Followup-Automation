@@ -1,0 +1,97 @@
+function sendLOPEmails() {
+  const SHEET_NAME = 'LOP';
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  const dataRange = sheet.getDataRange();
+  const data = dataRange.getValues();
+  const rows = data.slice(1); // Exclude header
+  const updates = [];
+
+  rows.forEach((row, index) => {
+    const rowIndex = index + 2; // Account for header row
+    const [
+      empId,        // A
+      name,         // B
+      email,        // C
+      reason,       // D
+      amount,       // E
+      entity,       // F
+      entityName,   // G
+      bankDetails,  // H
+      mailTrigger,  // I
+      status        // J
+    ] = row;
+
+    if (!empId || mailTrigger !== "Mail Sent" || status === "Mail Sent") {
+      return;
+    }
+
+    try {
+      const subject = `Pending Dues – Final Settlement Recovery Notification`;
+      const dueDate = calculateDueDate(7); // 7 working days from now
+
+      const htmlBody = `
+        <p>Hi ${name},</p>
+        <p>Hope you are doing well.</p>
+
+        <p>As part of your exit clearances, it has come to our notice that there is a recovery amount outstanding under your name.</p>
+
+        <p>Please note that there has been a deduction made against <strong>Leave Without Pay</strong> from your full and final settlement. Post adjusting this with the other components, the final amount needed to be paid to <strong>${entityName}</strong> is INR <strong>${amount}</strong>.</p>
+
+        <p>As a next step, please transfer INR <strong>${amount}</strong>, latest by <strong>${dueDate}</strong>, to the bank details as shared below:</p>
+
+        <pre>${bankDetails}</pre>
+
+        <p>Please let us know (as a reply to this email) once you remit funds. Additionally, please share the transaction details.</p>
+
+        <p>Kindly note that we would not be able to clear any background verifications from future employers till the time these dues are cleared.</p>
+
+        <p>If you have any queries, please feel free to write back to us.</p>
+
+        <p>Regards,<br>Niharica</p>
+      `;
+
+      MailApp.sendEmail({
+        to: email,
+        subject: subject,
+        htmlBody: htmlBody
+      });
+
+      updates.push({
+        row: rowIndex,
+        status: "Mail Sent",
+        timestamp: new Date()
+      });
+
+    } catch (e) {
+      updates.push({
+        row: rowIndex,
+        status: "Mail ID Error",
+        timestamp: ""
+      });
+      Logger.log(`Error sending email to ${email} in row ${rowIndex}: ${e.message}`);
+    }
+  });
+
+  updates.forEach(update => {
+    sheet.getRange(update.row, 10).setValue(update.status); // Col J
+    if (update.timestamp) {
+      sheet.getRange(update.row, 11).setValue(update.timestamp); // Col K
+    }
+  });
+}
+
+// Helper to add 7 working days, skipping weekends
+function calculateDueDate(workDays) {
+  let date = new Date();
+  let addedDays = 0;
+
+  while (addedDays < workDays) {
+    date.setDate(date.getDate() + 1);
+    const day = date.getDay();
+    if (day !== 0 && day !== 6) {
+      addedDays++;
+    }
+  }
+
+  return Utilities.formatDate(date, Session.getScriptTimeZone(), "dd/MM/yyyy");
+}
