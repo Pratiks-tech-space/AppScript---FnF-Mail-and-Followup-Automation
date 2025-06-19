@@ -7,19 +7,22 @@ function sendLOPEmails() {
   const updates = [];
 
   rows.forEach((row, index) => {
-    const rowIndex = index + 2; // Account for header row
-    const [
+    const rowIndex = index + 2; // Account for header row (1-based)
+    let [
       empId,        // A
       name,         // B
       email,        // C
       reason,       // D
-      amount,       // E
+      ,             // E - amount handled separately
       entity,       // F
       entityName,   // G
       bankDetails,  // H
       mailTrigger,  // I
       status        // J
     ] = row;
+
+    // ✅ Get formatted amount directly from sheet (with commas, decimals etc)
+    const amount = sheet.getRange(rowIndex, 5).getDisplayValue(); // Column E
 
     if (!empId || mailTrigger !== "Mail Sent" || status === "Mail Sent") {
       return;
@@ -39,7 +42,7 @@ function sendLOPEmails() {
 
         <p>As a next step, please transfer INR <strong>${amount}</strong>, latest by <strong>${dueDate}</strong>, to the bank details as shared below:</p>
 
-        <pre>${bankDetails}</pre>
+        <p>${bankDetails.replace(/\n/g, '<br>')}</p>
 
         <p>Please let us know (as a reply to this email) once you remit funds. Additionally, please share the transaction details.</p>
 
@@ -80,7 +83,7 @@ function sendLOPEmails() {
   });
 }
 
-// Helper to add 7 working days, skipping weekends
+// ✅ Format: "30 June 2025"
 function calculateDueDate(workDays) {
   let date = new Date();
   let addedDays = 0;
@@ -93,5 +96,5 @@ function calculateDueDate(workDays) {
     }
   }
 
-  return Utilities.formatDate(date, Session.getScriptTimeZone(), "dd/MM/yyyy");
+  return Utilities.formatDate(date, Session.getScriptTimeZone(), "dd MMMM yyyy");
 }
