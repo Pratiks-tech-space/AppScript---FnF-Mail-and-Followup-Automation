@@ -1,0 +1,98 @@
+function sendSecondFollowUpEmails() {
+  const SHEET_NAME = 'Deductions';
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  const data = sheet.getDataRange().getValues();
+  const today = new Date();
+
+  const rows = data.slice(1); // Skip header
+
+  rows.forEach((row, index) => {
+    const rowIndex = index + 2;
+
+    const [
+      empId,          // A
+      name,           // B
+      email,          // C
+      reason,         // D
+      ,               // E - originalAmt (skipped)
+      ,               // F - recoveryAmt (handled below)
+      entity,         // G
+      entityName,     // H
+      bankDetails,    // I
+      mailTrigger,    // J
+      mailStatus,     // K
+      mailDate,       // L
+      follow1Status,  // M
+      follow1Date,    // N
+      follow2Status,  // O
+      follow2Date,    // P
+      stopFollow      // Q
+    ] = row;
+
+    // ✅ Fetch displayed recoveryAmt to retain formatting (Col F)
+    const recoveryAmt = sheet.getRange(rowIndex, 6).getDisplayValue();
+
+    if (!empId) return;
+
+    if (stopFollow === "Stop follow-ups") {
+      sheet.getRange(rowIndex, 15).setValue("Follow Up Stopped"); // Col O
+      return;
+    }
+
+    if (
+      mailTrigger !== "Mail Sent" ||
+      mailStatus !== "Mail Sent" ||
+      follow1Status !== "Mail Sent" ||
+      follow2Status === "Mail Sent"
+    ) return;
+
+    const validDate = d => d instanceof Date && !isNaN(d);
+    const lDate = validDate(mailDate) ? mailDate : new Date(mailDate);     // Col L
+    const nDate = validDate(follow1Date) ? follow1Date : new Date(follow1Date); // Col N
+
+    if (!validDate(lDate) || !validDate(nDate)) {
+      Logger.log(`Invalid date(s) at row ${rowIndex}`);
+      return;
+    }
+
+    const daysSinceInitial = Math.floor((today - lDate) / (1000 * 60 * 60 * 24));
+    const daysSinceFollow1 = Math.floor((today - nDate) / (1000 * 60 * 60 * 24));
+
+    if (daysSinceInitial < 20 || daysSinceFollow1 < 10) return;
+
+    try {
+      const subject = `Final Reminder – Outstanding Dues`;
+      const htmlBody = `
+        <p>Hi ${name},</p>
+        <p>Hope you are doing well.</p>
+
+        <p>This is a final follow-up reminder regarding the revised outstanding amount of INR <strong>${recoveryAmt}</strong>, which remains unpaid despite our earlier communication.</p>
+
+        <p>We kindly request you to process the payment at the earliest. The bank details were shared in our previous correspondence. Once the transfer is completed, please share a screenshot of the payment confirmation for our records.</p>
+
+        <p>Kindly note that until this payment is received, we will be unable to share your experience letter and respond to any background verification requests from prospective employers.</p>
+
+        <p>We urge you to treat this matter with priority. Please let us know if you have any queries.</p>
+
+        <p>Regards,<br>Niharica</p>
+      `;
+
+      MailApp.sendEmail({
+        to: email,
+        subject: subject,
+        htmlBody: htmlBody
+      });
+
+      sheet.getRange(rowIndex, 15).setValue("Mail Sent");  // Col O (Follow-up status)
+      sheet.getRange(rowIndex, 16).setValue(new Date());   // Col P (Follow-up date)
+
+    } catch (e) {
+      Logger.log(`Second follow-up failed at row ${rowIndex}: ${e.message}`);
+      sheet.getRange(rowIndex, 15).setValue("Error");      // Col O
+    }
+  });
+}
+
+function myFunction() {
+  // placeholder if needed
+}
