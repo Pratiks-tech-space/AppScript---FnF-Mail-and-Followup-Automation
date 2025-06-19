@@ -8,7 +8,13 @@ function sendFollowUpEmails() {
 
   rows.forEach((row, index) => {
     const rowIndex = index + 2;
-    const [empId, name, email, , amount, , , , mailTrigger, mailStatus, mailDate, followStatus, followDate, , , stopFollow] = row;
+    const [
+      empId, name, email, , , , , , mailTrigger, mailStatus,
+      mailDate, followStatus, followDate, , , stopFollow
+    ] = row;
+
+    // ✅ Get displayed amount (Col E) to preserve commas, decimals
+    const amount = sheet.getRange(rowIndex, 5).getDisplayValue(); // Col E
 
     if (!empId || mailTrigger !== "Mail Sent" || mailStatus !== "Mail Sent") return;
     if (followStatus === "Mail Sent") return;
