@@ -14,7 +14,7 @@ function sendSecondFollowUpEmails() {
       name,         // B
       email,        // C
       reason,       // D
-      amount,       // E
+      ,             // E - (skipped because we'll fetch display value)
       entity,       // F
       entityName,   // G
       bankDetails,  // H
@@ -27,6 +27,9 @@ function sendSecondFollowUpEmails() {
       follow2Date,  // O
       stopFollow    // P
     ] = row;
+
+    // ✅ Get displayed amount format from Col E (5th column)
+    const amount = sheet.getRange(rowIndex, 5).getDisplayValue();
 
     if (!empId) return;
 
