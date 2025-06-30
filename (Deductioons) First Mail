@@ -1,4 +1,4 @@
-function sendDeductionsLOPEmails() {
+function sendDeductionsFirstEmails() {
   const SHEET_NAME = 'Deductions';
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
   const dataRange = sheet.getDataRange();
