@@ -1,4 +1,4 @@
-function sendLOPEmails() {
+function sendLOPFirstEmails() {
   const SHEET_NAME = 'LOP';
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
   const dataRange = sheet.getDataRange();
