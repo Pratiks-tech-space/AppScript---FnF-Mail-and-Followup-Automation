@@ -1,4 +1,4 @@
-function sendFollowUpEmails() {
+function sendFollowUpEmails_LOP() {
   const SHEET_NAME = 'LOP';
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
   const data = sheet.getDataRange().getValues();
@@ -30,7 +30,7 @@ function sendFollowUpEmails() {
     }
 
     const diffInMs = today - mailSentDate;
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24)); 
     if (diffInDays < 20) return;
 
     try {
