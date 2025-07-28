@@ -29,7 +29,7 @@ function sendLOPFirstEmails() {
     }
 
     try {
-      const subject = `Pending Dues – Final Settlement Recovery Notification`;
+      const subject = `Pending Dues – Final Settlement Recovery`;
       const dueDate = calculateDueDate(7); // 7 working days from now
 
       const htmlBody = `
@@ -38,7 +38,7 @@ function sendLOPFirstEmails() {
 
         <p>As part of your exit clearances, it has come to our notice that there is a recovery amount outstanding under your name.</p>
 
-        <p>Please note that there has been a deduction made against <strong>Leave Without Pay</strong> from your full and final settlement. Post adjusting this with the other components, the final amount needed to be paid to <strong>${entityName}</strong> is INR <strong>${amount}</strong>.</p>
+        <p>Please note that there has been a deduction made against <strong>${reason}</strong> from your full and final settlement. Post adjusting this with the other components, the final amount needed to be paid to <strong>${entityName}</strong> is INR <strong>${amount}</strong>.</p>
 
         <p>As a next step, please transfer INR <strong>${amount}</strong>, latest by <strong>${dueDate}</strong>, to the bank details as shared below:</p>
 
@@ -53,10 +53,11 @@ function sendLOPFirstEmails() {
         <p>Regards,<br>Niharica</p>
       `;
 
-      MailApp.sendEmail({
-        to: email,
-        subject: subject,
-        htmlBody: htmlBody
+      // :white_check_mark: Send email with sender name set as "Eternal HR Team"
+      GmailApp.sendEmail(email, subject, '', {
+        cc: "salary@eternal.com,abheek.roy@zomato.com",
+        htmlBody: htmlBody,
+        name: "Eternal HR Team"
       });
 
       updates.push({
